@@ -1,14 +1,62 @@
-const debug = require('debug')('holded:client:documents');
+import debugLib from 'debug';
 
-/**
- * The Holded invoice documents API
- * @see https://developers.holded.com/v1.0/reference#documents
- */
-module.exports = class DocumentsApi {
-  /**
-   * @param {HttpClient} An HTTP client for the Holded API
-   */
-  constructor({ httpClient }) {
+const debug = debugLib('holded:client:documents');
+
+interface DocumentsApiOptions {
+  httpClient: any;
+}
+
+interface ListParams {
+  type: string;
+}
+
+interface CreateParams {
+  type: string;
+  document: any;
+}
+
+interface GetParams {
+  type: string;
+  id: string|number;
+}
+
+interface DeleteParams {
+  type: string;
+  id: string | number;
+}
+
+interface UpdateParams {
+  type: string;
+  id: string | number;
+  document: any;
+}
+
+interface DownloadPdfParams {
+  type: string;
+  id: string | number;
+}
+
+interface PayParams {
+  type: string;
+  id: string | number;
+  payment?: any;
+}
+
+export type DocumentType =
+  | 'creditnote'
+  | 'estimate'
+  | 'invoice'
+  | 'proform'
+  | 'purchase'
+  | 'purchaserefund'
+  | 'salesorder'
+  | 'salesreceipt';
+
+export default class DocumentsApi {
+  private _resourceName: string;
+  private _httpClient: any;
+
+  constructor({ httpClient }: DocumentsApiOptions) {
     this._resourceName = 'documents';
     this._httpClient = httpClient;
 
@@ -17,18 +65,11 @@ module.exports = class DocumentsApi {
     debug('Holded "documents" API created', this.types);
   }
 
-  /**
-   * @return {string}
-   */
-  get resourceName() {
+  get resourceName(): string {
     return this._resourceName;
   }
 
-  /* eslint-disable class-methods-use-this */
-  /**
-   * @return {Object} All the available document types
-   */
-  get types() {
+  get types(): Record<string, DocumentType> {
     return {
       CREDITNOTE: 'creditnote',
       ESTIMATE: 'estimate',
@@ -41,21 +82,11 @@ module.exports = class DocumentsApi {
     };
   }
 
-  /**
-   * @param  {Object} value
-   * @throws
-   */
-  set types(value) {
+  set types(_value: any) {
     throw new Error('Modifying document types is not permitted!');
   }
-  /* eslint-enable class-methods-use-this */
 
-  /**
-   * @param  {string} type The type of documents to retrieve
-   * @throws
-   * @return {Promise}
-   */
-  async list({ type }) {
+  async list({ type }: ListParams): Promise<any> {
     debug('Fetching "%s" documents...', type);
 
     const { data: documents } = await this._httpClient.request({
@@ -67,12 +98,7 @@ module.exports = class DocumentsApi {
     return documents;
   }
 
-  /**
-   * @param  {string} type The type of document to create
-   * @param  {Object} document
-   * @return {Promise}
-   */
-  async create({ type, document }) {
+  async create({ type, document }: CreateParams): Promise<any> {
     debug('Creating new "%s" document...', type);
 
     const { data } = await this._httpClient.request({
@@ -85,12 +111,7 @@ module.exports = class DocumentsApi {
     return data;
   }
 
-  /**
-   * @param  {string} type The type of document to get
-   * @param  {string} id
-   * @return {Promise}
-   */
-  async get({ type, id }) {
+  async get({ type, id }: GetParams): Promise<any> {
     debug('Getting "%s" document id="%s"...', type, id);
 
     const { data } = await this._httpClient.request({
@@ -102,12 +123,7 @@ module.exports = class DocumentsApi {
     return data;
   }
 
-  /**
-   * @param  {string} type The type of document to delete
-   * @param  {string} id
-   * @return {Promise}
-   */
-  async delete({ type, id }) {
+  async delete({ type, id }: DeleteParams): Promise<any> {
     debug('Deleting "%s" document id="%s"...', type, id);
 
     const { data } = await this._httpClient.request({
@@ -119,13 +135,7 @@ module.exports = class DocumentsApi {
     return data;
   }
 
-  /**
-   * @param  {string} type The type of document to update
-   * @param  {string} id
-   * @param  {Object} document
-   * @return {Promise}
-   */
-  async update({ type, id, document }) {
+  async update({ type, id, document }: UpdateParams): Promise<any> {
     debug('Updating "%s" document id="%s"...', type, id);
 
     const { data } = await this._httpClient.request({
@@ -138,12 +148,7 @@ module.exports = class DocumentsApi {
     return data;
   }
 
-  /**
-   * @param  {string} type The type of document to download
-   * @param  {string} id
-   * @return {Promise}
-   */
-  async downloadPdf({ type, id }) {
+  async downloadPdf({ type, id }: DownloadPdfParams): Promise<any> {
     debug('Downloading "%s" document id="%s" to PDF...', type, id);
 
     const { data: base64Pdf } = await this._httpClient.request({
@@ -154,12 +159,7 @@ module.exports = class DocumentsApi {
     return base64Pdf;
   }
 
-  /**
-   * @param  {string} type The type of document to pay
-   * @param  {string} id
-   * @return {Promise}
-   */
-  async pay({ type, id, payment }) {
+  async pay({ type, id, payment }: PayParams): Promise<any> {
     debug('Paying "%s" document id="%s"...', type, id);
 
     const { data } = await this._httpClient.request({
@@ -172,30 +172,25 @@ module.exports = class DocumentsApi {
     return data;
   }
 
-  /**
-   * @param  {string} type
-   * @throws
-   */
-  _throwIfInvalidType(type) {
+  private _throwIfInvalidType(type: DocumentType): void {
     const allowedTypes = Object.values(this.types);
 
     if (!allowedTypes.includes(type)) {
-      throw new Error(`Unknown document type "${type}"! Please provide one of the following type: ${allowedTypes.join(', ')}.`);
+      throw new Error(
+        `Unknown document type "${type}"! Please provide one of the following type: ${allowedTypes.join(', ')}.`
+      );
     }
   }
 
-  /**
-   * @param {string[]} methodNames
-   */
-  _decorateInvalidTypeMethods(methodNames) {
+  private _decorateInvalidTypeMethods(methodNames: string[]): void {
     methodNames.forEach((methodName) => {
-      const originalMethod = this[methodName].bind(this);
+      const originalMethod = (this as any)[methodName].bind(this);
 
-      this[methodName] = async (params) => {
+      (this as any)[methodName] = async (params: any) => {
         const { type } = params;
         this._throwIfInvalidType(type);
         return originalMethod(params);
       };
     });
   }
-};
+}

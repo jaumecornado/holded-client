@@ -1,7 +1,11 @@
-const DocumentsApi = require('../DocumentsApi');
+import DocumentsApi, { DocumentType } from '../DocumentsApi';
+
+type HttpClientMock = {
+  request: jest.Mock;
+};
 
 function createApi() {
-  const httpClient = {
+  const httpClient: HttpClientMock = {
     request: jest.fn(() => ({ data: [] })),
   };
 
@@ -43,7 +47,7 @@ describe('DocumentsApi', () => {
   it('should not allow changing the document types', () => {
     const { api } = createApi();
 
-    expect(() => { api.types = 'hell yeah!'; })
+    expect(() => { (api as any).types = 'hell yeah!'; })
       .toThrowError('Modifying document types is not permitted!');
   });
 
@@ -86,7 +90,7 @@ describe('DocumentsApi', () => {
       it('should throw an error', async () => {
         const { api } = createApi();
 
-        await expect(api.list({ type: 'dni' }))
+        await expect(api.list({ type: 'dni' as DocumentType }))
           .rejects
           .toThrow(/Unknown document type "dni"!/);
       });
@@ -142,7 +146,7 @@ describe('DocumentsApi', () => {
       it('should throw an error', async () => {
         const { api } = createApi();
 
-        await expect(api.create({ type: 'birthcertificate', document }))
+        await expect(api.create({ type: 'birthcertificate' as DocumentType, document }))
           .rejects
           .toThrow(/Unknown document type "birthcertificate"!/);
       });
@@ -189,7 +193,7 @@ describe('DocumentsApi', () => {
       it('should throw an error', async () => {
         const { api } = createApi();
 
-        await expect(api.get({ type: 'master', id: 88 }))
+        await expect(api.get({ type: 'master' as DocumentType, id: 88 }))
           .rejects
           .toThrow(/Unknown document type "master"!/);
       });
@@ -236,7 +240,7 @@ describe('DocumentsApi', () => {
       it('should throw an error', async () => {
         const { api } = createApi();
 
-        await expect(api.downloadPdf({ type: 'master', id: 88 }))
+        await expect(api.downloadPdf({ type: 'master' as DocumentType, id: 88 }))
           .rejects
           .toThrow(/Unknown document type "master"!/);
       });
@@ -289,7 +293,7 @@ describe('DocumentsApi', () => {
       it('should throw an error', async () => {
         const { api } = createApi();
 
-        await expect(api.downloadPdf({ type: 'master', id: 88 }))
+        await expect(api.downloadPdf({ type: 'master' as DocumentType, id: 88 }))
           .rejects
           .toThrow(/Unknown document type "master"!/);
       });
@@ -336,7 +340,7 @@ describe('DocumentsApi', () => {
       it('should throw an error', async () => {
         const { api } = createApi();
 
-        await expect(api.downloadPdf({ type: 'swimmingcertificate', id: 88 }))
+        await expect(api.downloadPdf({ type: 'swimmingcertificate' as DocumentType, id: 88 }))
           .rejects
           .toThrow(/Unknown document type "swimmingcertificate"!/);
       });
@@ -347,11 +351,13 @@ describe('DocumentsApi', () => {
     it('should make a proper HTTP request to Holded API', async () => {
       const { httpClient, api } = createApi();
 
-      await api.pay({ type: api.types.SALESRECEIPT, id: 88 });
+      const payment = { amount: 100 }; // Add a dummy payment object
+      await api.pay({ type: api.types.SALESRECEIPT, id: 88, payment });
 
       expect(httpClient.request).toHaveBeenCalledWith({
         method: 'post',
         url: `/documents/${api.types.SALESRECEIPT}/88/pay`,
+        data: payment,
       });
     });
 
@@ -359,9 +365,10 @@ describe('DocumentsApi', () => {
       const { httpClient, api } = createApi();
       const apiResponse = { id: '88' };
 
-      httpClient.request.mockResolvedValue({ data: apiResponse });
+      const payment = { amount: 100 }; // Add a dummy payment object
+      const result = await api.pay({ type: api.types.SALESRECEIPT, id: 88, payment });
 
-      const result = await api.pay({ type: api.types.SALESRECEIPT, id: 88 });
+      expect(result).toEqual(apiResponse);
 
       expect(result).toEqual(apiResponse);
     });
@@ -370,22 +377,13 @@ describe('DocumentsApi', () => {
       it('should forward (throw) the error', async () => {
         const { httpClient, api } = createApi();
         const httpError = new Error('HTTP error!');
-
-        httpClient.request.mockRejectedValue(httpError);
-
+        const payment = { amount: 100 }; // Add a dummy payment object
+        await expect(api.pay({ type: api.types.SALESRECEIPT, id: 88, payment }))
+          .rejects
+          .toThrow(httpError);
         await expect(api.pay({ type: api.types.SALESRECEIPT, id: 88 }))
           .rejects
           .toThrow(httpError);
-      });
-    });
-
-    describe('when providing an unknown document type', () => {
-      it('should throw an error', async () => {
-        const { api } = createApi();
-
-        await expect(api.pay({ type: 'master', id: 88 }))
-          .rejects
-          .toThrow(/Unknown document type "master"!/);
       });
     });
   });

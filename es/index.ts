@@ -1,20 +1,30 @@
-const debug = require('debug')('holded:client:core');
-const { version: pkgVersion } = require('../package.json');
-const HttpClient = require('./HttpClient');
-const {
-  DocumentsApi,
-  GenericApi,
-} = require('./api');
+import debugLib from 'debug';
+import { version as pkgVersion } from '../package.json';
+import HttpClient from './HttpClient';
+import { DocumentsApi, GenericApi } from './api';
+
+const debug = debugLib('holded:client:core');
+
+interface HoldedClientOptions {
+  apiKey: string;
+}
 
 /**
  * The client for the Holded invoice API v1.0
  * @see https://developers.holded.com/v1.0
  */
-module.exports = class HoldedClient {
-  /**
-   * @param {string} apiKey
-   */
-  constructor({ apiKey }) {
+export default class HoldedClient {
+  private _httpClient: any;
+  public documents: DocumentsApi;
+  public contacts!: GenericApi;
+  public saleschannels!: GenericApi;
+  public products!: GenericApi;
+  public warehouses!: GenericApi;
+  public treasury!: GenericApi;
+  public expensesaccounts!: GenericApi;
+  public payments!: GenericApi;
+
+  constructor({ apiKey }: HoldedClientOptions) {
     debug('💎  Holded API client v%s', pkgVersion);
 
     const invoiceApiUrl = 'https://api.holded.com/api/invoicing/v1';
@@ -44,7 +54,7 @@ module.exports = class HoldedClient {
 
       this._decorateNotFoundMethods({ api, methodNames: ['get', 'delete', 'update'] });
 
-      this[resourceName] = api;
+      (this as any)[resourceName] = api;
     });
 
     const api = new DocumentsApi({ httpClient: this._httpClient });
@@ -54,21 +64,14 @@ module.exports = class HoldedClient {
     debug('Holded API client created');
   }
 
-  /**
-   * We do this because if the resource is not found, the API does not return a 404 but a
-   * 400 (Bad Request) with (e.g.) the following data: { status: 0, info: 'not found' }
-   * @param {Api} api
-   * @param {string[]} methodNames
-   */
-  _decorateNotFoundMethods({ api, methodNames }) {
+  private _decorateNotFoundMethods({ api, methodNames }: { api: any; methodNames: string[] }) {
     methodNames.forEach((methodName) => {
       const originalMethod = api[methodName].bind(api);
 
-      // eslint-disable-next-line no-param-reassign
-      api[methodName] = async (params) => {
+      api[methodName] = async (params: any) => {
         try {
           return await originalMethod(params);
-        } catch (error) {
+        } catch (error: any) {
           this._throwIfNotFoundError({
             error,
             resourceId: params.id,
@@ -81,28 +84,21 @@ module.exports = class HoldedClient {
     });
   }
 
-  /**
-   * @param  {Error} error
-   * @param  {string} resourceId
-   * @param  {string} resourceName
-   * @throws
-   */
-  // eslint-disable-next-line class-methods-use-this
-  _throwIfNotFoundError({ error, resourceId, resourceName }) {
+  private _throwIfNotFoundError({ error, resourceId, resourceName }: { error: any; resourceId: string; resourceName: string }) {
     const { response = {} } = error;
     const { status, data = {} } = response;
     const isNotFound = status === 400 &&
                         data.status === 0 &&
-                        Boolean(data.info.match(/.*not found/i));
+                        Boolean(data.info && data.info.match(/.*not found/i));
 
     if (isNotFound) {
       const notFoundError = new Error(`"${resourceName}" resource id="${resourceId}" not found!`);
-      notFoundError.response = {
+      (notFoundError as any).response = {
         status: 404,
         statusText: 'Not Found',
       };
-      notFoundError.originalError = error;
+      (notFoundError as any).originalError = error;
       throw notFoundError;
     }
   }
-};
+}

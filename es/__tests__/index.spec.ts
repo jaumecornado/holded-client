@@ -1,8 +1,5 @@
-const HoldedClient = require('..');
-const {
-  DocumentsApi,
-  GenericApi,
-} = require('../api');
+import HoldedClient from '..';
+import { DocumentsApi, GenericApi } from '../api';
 
 describe('HoldedClient', () => {
   it('should be a class', () => {
