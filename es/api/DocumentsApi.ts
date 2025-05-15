@@ -8,6 +8,7 @@ interface DocumentsApiOptions {
 
 interface ListParams {
   type: string;
+  contactid?: string;
 }
 
 interface CreateParams {
@@ -21,23 +22,23 @@ interface GetParams {
 }
 
 interface DeleteParams {
-  type: string;
+  type: string | number;
   id: string | number;
 }
 
 interface UpdateParams {
-  type: string;
+  type: string | number;
   id: string | number;
   document: any;
 }
 
 interface DownloadPdfParams {
-  type: string;
+  type: string | number;
   id: string | number;
 }
 
 interface PayParams {
-  type: string;
+  type: string | number;
   id: string | number;
   payment?: any;
 }
@@ -86,12 +87,18 @@ export default class DocumentsApi {
     throw new Error('Modifying document types is not permitted!');
   }
 
-  async list({ type }: ListParams): Promise<any> {
+  async list({ type, contactid }: ListParams): Promise<any> {
     debug('Fetching "%s" documents...', type);
+
+    const params: Record<string, any> = {};
+    if (contactid) {
+      params.contactid = contactid;
+    }
 
     const { data: documents } = await this._httpClient.request({
       method: 'get',
       url: `/documents/${type}`,
+      params, // Añadido para pasar los parámetros GET
     });
 
     debug(documents);

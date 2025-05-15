@@ -20,7 +20,7 @@ const HoldedClient = require('holded-client');
 
 const client = new HoldedClient({ apiKey: 'your private api key' });
 
-const { docTypes } = client.documents;
+const { types: docTypes } = client.documents;
 
 const invoicesList = await client.documents.list({ type: docTypes.INVOICE });
 ```

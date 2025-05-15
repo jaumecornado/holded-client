@@ -1,8 +1,11 @@
 {
-  "name": "holded-client",
-  "version": "1.1.1",
+  "name": "holded-client-ts",
+  "version": "1.2.0",
   "description": "Holded API client",
-  "author": "mawrkus <web@sparring-partner.be>",
+  "author": "jaume cornado <jcornado@me.com>",
+  "contributors": [
+    "mawrkus <web@sparring-partner.be>"
+  ],
   "keywords": [
     "holded",
     "client",
@@ -14,7 +17,7 @@
   "engines": {
     "node": ">= 18"
   },
-  "homepage": "https://github.com/mawrkus/holded-client",
+  "homepage": "https://github.com/jaumecornado/holded-client",
   "files": [
     "lib"
   ],
@@ -43,10 +46,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mawrkus/holded-client.git"
+    "url": "https://github.com/jaumecornado/holded-client.git"
   },
   "bugs": {
-    "url": "https://github.com/mawrkus/holded-client/issues"
+    "url": "https://github.com/jaumecornado/holded-client/issues"
   },
   "jest": {
     "preset": "ts-jest",
